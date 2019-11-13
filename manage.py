@@ -5,7 +5,7 @@ import sys
 
 
 def main():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Sieiechowicz_analytics.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Sieciechowicz_analytics.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
