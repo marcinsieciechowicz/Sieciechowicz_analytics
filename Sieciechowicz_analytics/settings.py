@@ -50,7 +50,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'Sieiechowicz_analytics.urls'
+ROOT_URLCONF = 'Sieciechowicz_analytics.urls'
 
 TEMPLATES = [
     {

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="db" uuid="fa1b08a3-e9a1-4456-8a2e-ab1eb91c52f5">
+    <data-source source="LOCAL" name="db [2]" uuid="e5899b18-42db-4359-ac00-f016f266ae5c">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\Acer\Desktop\Sieiechowicz_analytics\db.sqlite3</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\Acer\Desktop\Sieciechowicz_analytics\db.sqlite3</jdbc-url>
       <driver-properties>
         <property name="enable_load_extension" value="true" />
       </driver-properties>
