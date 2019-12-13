@@ -44,10 +44,16 @@ def save_to_database_2():
 
 
 # save_to_database_2()
-src_dir = 'src'
-for filename in os.listdir(src_dir):
-    if filename.endswith('.csv'):
-        diagnosis_df = pd.read_csv(os.path.join(src_dir, filename))
-        print(diagnosis_df)
+# src_dir = 'src'
+# for filename in os.listdir(src_dir):
+#     if filename.endswith('.csv'):
+#         diagnosis_df = pd.read_csv(os.path.join(src_dir, filename))
+#         print(diagnosis_df)
 
-# zaimportowac dane z src do sql (automatycznie)
+# for variable in os.listdir(src_dir):
+src_dir = 'src'
+for entry in os.listdir(src_dir):
+    if entry.endswith('.csv'):
+        csv_filepath = os.path.join(src_dir, entry)
+        diagnosis_dataframe = pd.read_csv(csv_filepath)
+        print(diagnosis_dataframe)
