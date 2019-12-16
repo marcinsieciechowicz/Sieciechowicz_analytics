@@ -4,13 +4,15 @@ import sqlite3
 
 
 def save_to_database():
+    src_direct = 'src'
     conn = sqlite3.connect('..\..\db.sqlite3')
     with conn:
         cur = conn.cursor()
-        for index, row in diagnosis_df.iterrows():
-            sql = "INSERT INTO Diagnosis_diagnosis ('when', sex, icd10) VALUES (?, ?, ?)"
-            cur.execute(sql, (row.when, row.sex, row.icd10))
-            print(cur.lastrowid)
+        for file in src_direct:
+            if file.endswith('.csv'):
+                for index, row in file.iterrows():
+                    sql = "INSERT INTO Diagnosis_diagnosis ('when', sex, icd10) VALUES (?, ?, ?)"
+                    cur.execute(sql, (row.when, row.sex, row.icd10))
 
 
 def save_to_database_2():
