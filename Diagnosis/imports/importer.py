@@ -10,7 +10,7 @@ def save_to_database():
     with conn:
         cur = conn.cursor()
         for entry in os.listdir(src_dir):
-            for src_dir in os.walk('.csv', topdown=True):
+            for root, dirs, files in os.walk('src', topdown=True):
                 if entry.endswith('.csv'):
                     csv_filepath = os.path.join(src_dir, entry)
                     diagnosis_df = pd.read_csv(csv_filepath)
