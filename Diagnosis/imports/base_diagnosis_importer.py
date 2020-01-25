@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 
-class BaseDiagnosisImporter(ABC):
+class BaseCsvToTableImporter(ABC):
     def __init__(self, src_dir, db_path):
         self.src_dir = src_dir
         self.conn = sqlite3.connect(db_path)
@@ -19,7 +19,8 @@ class BaseDiagnosisImporter(ABC):
                         self._save(self._get_dataframe(csv_filepath))
                         self.rename_source_file(csv_filepath)
 
-    def _get_dataframe(self, csv_filepath: str) -> pd.DataFrame:
+    @staticmethod
+    def _get_dataframe(csv_filepath: str) -> pd.DataFrame:
         diagnosis_df = pd.read_csv(csv_filepath)
         diagnosis_df = diagnosis_df.fillna('M')
 
@@ -39,13 +40,18 @@ class BaseDiagnosisImporter(ABC):
             os.replace(csv_filepath, new_filename)
 
 
-class DiagnosisDataFrameWholesaleImporter(BaseDiagnosisImporter):
+class CsvToTableWholesaleImporter(BaseCsvToTableImporter):
+
+    def __init__(self, *, src_dir, db_path, target_table):
+        super().__init__(src_dir, db_path)
+
+        self.target_table = target_table
 
     def _save(self, diagnosis_df):
-        diagnosis_df.to_sql('Diagnosis_diagnosis', self.conn, index=False, if_exists='append')
+        diagnosis_df.to_sql(self.target_table, self.conn, index=False, if_exists='append')
 
 
-class DiagnosisDataFrameIterativeImporter(BaseDiagnosisImporter):
+class CsvToDiagnosis_DiagnosisTableIterativeImporter(BaseCsvToTableImporter):
 
     def _save(self, diagnosis_df):
         cur = self.conn.cursor()
@@ -54,7 +60,8 @@ class DiagnosisDataFrameIterativeImporter(BaseDiagnosisImporter):
             cur.execute(sql, (row.when, row.sex, row.icd10))
 
 
-diagnosis_importer_iterative = DiagnosisDataFrameIterativeImporter('src', '..\..\db.sqlite3')
-diagnosis_importer_iterative.do_import()
-diagnosis_importer_wholesale = DiagnosisDataFrameWholesaleImporter('src', '..\..\db.sqlite3')
-diagnosis_importer_wholesale.do_import()
+# iterative_importer = CsvToDiagnosis_DiagnosisTableIterativeImporter('src', '..\..\db.sqlite3')
+# iterative_importer.do_import()
+wholesale_importer = CsvToTableWholesaleImporter(src_dir='src', db_path='..\..\db.sqlite3',
+                                                 target_table='Diagnosis_diagnosis')
+wholesale_importer.do_import()
