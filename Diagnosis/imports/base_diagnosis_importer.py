@@ -1,28 +1,41 @@
 import os
 import sqlite3
 from abc import ABC, abstractmethod
-from colorama import Back
+
+from termcolor import cprint
 import pandas as pd
 
 
 class BaseCsvToTableImporter(ABC):
     def __init__(self, src_dir: str, db_path: str):
-        self._check_db_path(db_path)
         self._check_src_dir(src_dir)
+        self._check_db_path(db_path)
 
         self.src_dir = src_dir
-        self.conn = sqlite3.connect(db_path)
+        self.conn = self._init_conn(db_path)
+
+    @staticmethod
+    def _init_conn(db_path):
+        conn = None
+        try:
+            return sqlite3.connect(db_path)
+
+        except sqlite3.Error as error:
+            cprint(f'ERR: {error}', 'grey', 'on_red')
+        finally:
+            if conn:
+                conn.close()
 
     @staticmethod
     def _check_db_path(db_path):
         if not os.path.isfile(db_path):
-            print(Back.RED + 'no database found')
+            print(cprint('ERR: no database found', 'grey', 'on_red'))
             exit()
 
     @staticmethod
     def _check_src_dir(src_dir):
         if not os.path.isdir(src_dir):
-            print(Back.RED + 'no source directory found')
+            print(cprint('ERR: no source directory found', 'grey', 'on_red'))
             exit()
 
     def do_import(self):
@@ -54,7 +67,7 @@ class BaseCsvToTableImporter(ABC):
         try:
             os.rename(csv_filepath, new_filename)
         except OSError:
-            print(Back.RED + 'unable to rename file:', csv_filepath)
+            print(cprint('WAR: unable to rename file:', 'grey', 'on_yellow', csv_filepath))
             os.replace(csv_filepath, new_filename)
 
 
@@ -71,7 +84,7 @@ class CsvToTableWholesaleImporter(BaseCsvToTableImporter):
         sql = "SELECT name FROM sqlite_master WHERE type='table' AND name = ?"
         cur.execute(sql, (target_table,))
         if cur.fetchone() is None:
-            print(Back.RED + f'No target {target_table} table found')
+            print(cprint(f'ERR: No target {target_table} table found', 'grey', 'on_red'))
             exit()
 
     def _save(self, diagnosis_df):
@@ -90,7 +103,5 @@ class CsvToDiagnosis_DiagnosisTableIterativeImporter(BaseCsvToTableImporter):
 # iterative_importer = CsvToDiagnosis_DiagnosisTableIterativeImporter('src', '..\..\db.sqlite3')
 # iterative_importer.do_import()
 wholesale_importer = CsvToTableWholesaleImporter(src_dir='src', db_path='..\..\db.sqlite3',
-                                                 target_table='Diagnosis_diagno')
+                                                 target_table='Diagnosis_diagnosis')
 wholesale_importer.do_import()
-
-
