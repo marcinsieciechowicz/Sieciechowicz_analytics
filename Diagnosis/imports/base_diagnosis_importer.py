@@ -91,17 +91,6 @@ class CsvToTableWholesaleImporter(BaseCsvToTableImporter):
         diagnosis_df.to_sql(self.target_table, self.conn, index=False, if_exists='append')
 
 
-class CsvToDiagnosis_DiagnosisTableIterativeImporter(BaseCsvToTableImporter):
-
-    def _save(self, diagnosis_df):
-        cur = self.conn.cursor()
-        for index, row in diagnosis_df.iterrows():
-            sql = "INSERT INTO Diagnosis_diagnosis ('when', sex, icd10) VALUES (?, ?, ?)"
-            cur.execute(sql, (row.when, row.sex, row.icd10))
-
-
-# iterative_importer = CsvToDiagnosis_DiagnosisTableIterativeImporter('src', '..\..\db.sqlite3')
-# iterative_importer.do_import()
 wholesale_importer = CsvToTableWholesaleImporter(src_dir='src', db_path='..\..\db.sqlite3',
                                                  target_table='Diagnosis_diagnosis')
 wholesale_importer.do_import()
