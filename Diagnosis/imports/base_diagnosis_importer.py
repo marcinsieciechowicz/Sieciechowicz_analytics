@@ -56,8 +56,11 @@ class BaseCsvToTableImporter(ABC):
                     for file in files:
                         if file.endswith('.csv'):
                             csv_filepath = os.path.join(root, file)
-                            self._save(self._get_dataframe(csv_filepath))
-                            self._rename_source_file(csv_filepath)
+                            diagnosis_df = self._get_dataframe(csv_filepath)
+                            self._validate(diagnosis_df)
+                            self._save(diagnosis_df)
+                            # self._rename_source_file(csv_filepath)
+                            self._move_source_file(csv_filepath)
         finally:
             if self.conn:
                 self.conn.close()
@@ -72,6 +75,8 @@ class BaseCsvToTableImporter(ABC):
     def _save(self, diagnosis_df: pd.DataFrame):
         diagnosis_df.to_sql(self.target_table, self.conn, index=False, if_exists='append')
 
+
+
     @staticmethod
     def _rename_source_file(csv_filepath):
         new_filename = csv_filepath.replace('.csv', '.imported')
@@ -81,6 +86,19 @@ class BaseCsvToTableImporter(ABC):
             print(cprint('WAR: unable to rename file:', 'grey', 'on_yellow', csv_filepath))
             os.replace(csv_filepath, new_filename)
 
+    @staticmethod
+    def _move_source_file(csv_filepath):
+        csv_dirpath = os.path.dirname(csv_filepath)
+        if not os.path.exists(csv_dirpath):
+            os.makedirs(csv_dirpath)
+        dst_csv_filepath = csv_filepath.replace('src', 'res')
+        os.rename(csv_filepath, dst_csv_filepath)
+
+    @staticmethod
+    @abstractmethod
+    def _validate(diagnosis_df):
+        pass
+
 
 class CsvToDiagnosisImporter(BaseCsvToTableImporter):
 
@@ -88,6 +106,13 @@ class CsvToDiagnosisImporter(BaseCsvToTableImporter):
         target_table = 'Diagnosis_diagnosis'
         super().__init__(src_dir, db_path, target_table)
 
+    @staticmethod
+    def _validate(diagnosis_df):
+        pass
+
 
 diagnosis_importer = CsvToDiagnosisImporter(src_dir='src', db_path='..\..\db.sqlite3')
 diagnosis_importer.do_import()
+
+
+# read about pandas schema, connected with the code, which validator you have to use?
