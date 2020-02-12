@@ -84,25 +84,13 @@ class BaseCsvToTableImporter(ABC):
             print(cprint('WAR: unable to rename file:', 'grey', 'on_yellow', csv_filepath))
             os.replace(csv_filepath, new_filename)
 
-    # @staticmethod
-    # def _move_source_file(csv_filepath):
-    #     csv_dirpath = os.path.dirname(csv_filepath)
-    #     dst_csv_dirpath = csv_dirpath.replace('src', 'res')
-    #     if not os.path.exists(dst_csv_dirpath):
-    #         os.makedirs(dst_csv_dirpath)
-    #     dst_csv_filepath = csv_filepath.replace('src', 'res')
-    #     os.rename(csv_filepath, dst_csv_filepath)
     @staticmethod
     def _move_source_file(csv_filepath: str):
         try:
             dst = csv_filepath.replace('src', 'res')
-            dst_dirs, _ = os.path.split(dst)
-            if not os.path.exists(dst_dirs):
-                os.makedirs(dst_dirs)
-            os.rename(csv_filepath, dst)
+            os.renames(csv_filepath, dst)
         except FileExistsError:
             cprint(f'File {dst} already exists', 'grey', 'on_red')
-
 
     @staticmethod
     @abstractmethod
