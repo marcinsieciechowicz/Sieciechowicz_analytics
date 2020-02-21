@@ -1,13 +1,15 @@
 import os
 import sqlite3
 from abc import ABC, abstractmethod
-
-from termcolor import cprint
+import logging
 import pandas as pd
 
 
 class BaseCsvToTableImporter(ABC):
     def __init__(self, src_dir: str, db_path: str, target_table: str):
+
+        self._init_log()
+
         self._check_src_dir(src_dir)
         self.src_dir = src_dir
 
@@ -17,25 +19,31 @@ class BaseCsvToTableImporter(ABC):
         self._check_target_table(target_table)
         self.target_table = target_table
 
-    @staticmethod
-    def _check_src_dir(src_dir):
+    def _init_log(self):
+        self.Logger = logging.getLogger(BaseCsvToTableImporter.__name__)
+        file = logging.FileHandler('errors.txt', mode='a')
+        self.Logger.addHandler(file)
+        console = logging.StreamHandler()
+        self.Logger.addHandler(console)
+
+    def _check_src_dir(self, src_dir):
         if not os.path.isdir(src_dir):
-            print(cprint('ERR: no source directory found', 'grey', 'on_red'))
+            error_message = f'no source directory {src_dir} found'
+            self.Logger.error(error_message)
             exit()
 
-    @staticmethod
-    def _check_db_path(db_path):
+    def _check_db_path(self, db_path):
         if not os.path.isfile(db_path):
-            print(cprint('ERR: no database found', 'grey', 'on_red'))
+            error_message = f'no database {db_path} found'
+            self.Logger.error(error_message)
             exit()
 
-    @staticmethod
-    def _init_conn(db_path):
+    def _init_conn(self, db_path):
         conn = None
         try:
             return sqlite3.connect(db_path)
         except sqlite3.Error as error:
-            cprint(f'ERR: {error}', 'grey', 'on_red')
+            self.Logger.error(error_message)
             exit()
         finally:
             if conn:
@@ -46,7 +54,8 @@ class BaseCsvToTableImporter(ABC):
         sql = "SELECT name FROM sqlite_master WHERE type='table' AND name = ?"
         cur.execute(sql, (target_table,))
         if cur.fetchone() is None:
-            cprint(f'ERR: No target {target_table} table found', 'grey', 'on_red')
+            error_message = f'No target {target_table} table found'
+            self.Logger.error(error_message)
             exit()
 
     def do_import(self):
@@ -60,7 +69,7 @@ class BaseCsvToTableImporter(ABC):
                             self._validate(diagnosis_df)
                             self._save(diagnosis_df)
                             # self._rename_source_file(csv_filepath)
-                            # self._move_source_file(csv_filepath)
+                            self._move_source_file(csv_filepath)
         finally:
             if self.conn:
                 self.conn.close()
@@ -75,22 +84,24 @@ class BaseCsvToTableImporter(ABC):
     def _save(self, diagnosis_df: pd.DataFrame):
         diagnosis_df.to_sql(self.target_table, self.conn, index=False, if_exists='append')
 
-    @staticmethod
-    def _rename_source_file(csv_filepath):
+    def _rename_source_file(self, csv_filepath):
         new_filename = csv_filepath.replace('.csv', '.imported')
         try:
             os.rename(csv_filepath, new_filename)
         except OSError:
-            print(cprint('WAR: unable to rename file:', 'grey', 'on_yellow', csv_filepath))
+            error_message = f'unable to rename file {csv_filepath}'
+            self._log(error_message)
             os.replace(csv_filepath, new_filename)
 
-    @staticmethod
-    def _move_source_file(csv_filepath: str):
+    def _move_source_file(self, csv_filepath: str):
         try:
             dst = csv_filepath.replace('src', 'res')
             os.renames(csv_filepath, dst)
         except FileExistsError:
-            cprint(f'File {dst} already exists', 'grey', 'on_red')
+            error_message = f'File {dst} already exists'
+            self.Logger.error(error_message)
+        except OSError as e:
+            self.Logger.error(e)
 
     @staticmethod
     @abstractmethod
@@ -112,6 +123,3 @@ class CsvToDiagnosisImporter(BaseCsvToTableImporter):
 diagnosis_importer = CsvToDiagnosisImporter(src_dir='src', db_path='..\..\db.sqlite3')
 diagnosis_importer.do_import()
 
-# read about pandas schema, connected with the code, which validator you have to use?
-
-# make 'when' in Diagnosis_diagnosis unique, by migration
