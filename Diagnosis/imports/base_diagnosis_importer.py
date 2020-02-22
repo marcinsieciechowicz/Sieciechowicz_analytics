@@ -43,7 +43,7 @@ class BaseCsvToTableImporter(ABC):
         try:
             return sqlite3.connect(db_path)
         except sqlite3.Error as error:
-            self.Logger.error(error_message)
+            self.Logger.error(error)
             exit()
         finally:
             if conn:
@@ -90,7 +90,7 @@ class BaseCsvToTableImporter(ABC):
             os.rename(csv_filepath, new_filename)
         except OSError:
             error_message = f'unable to rename file {csv_filepath}'
-            self._log(error_message)
+            self.Logger.error(error_message)
             os.replace(csv_filepath, new_filename)
 
     def _move_source_file(self, csv_filepath: str):
@@ -123,3 +123,4 @@ class CsvToDiagnosisImporter(BaseCsvToTableImporter):
 diagnosis_importer = CsvToDiagnosisImporter(src_dir='src', db_path='..\..\db.sqlite3')
 diagnosis_importer.do_import()
 
+# gdzie zaczynamy kodowanie z pandas schema?
