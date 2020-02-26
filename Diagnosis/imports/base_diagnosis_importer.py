@@ -3,6 +3,8 @@ import sqlite3
 from abc import ABC, abstractmethod
 import logging
 import pandas as pd
+from pandas_schema import Column, Schema
+from pandas_schema.validation import MatchesPatternValidation, InListValidation
 
 
 class BaseCsvToTableImporter(ABC):
@@ -28,7 +30,7 @@ class BaseCsvToTableImporter(ABC):
 
     def _check_src_dir(self, src_dir):
         if not os.path.isdir(src_dir):
-            error_message = f'no source directory {src_dir} found'
+            error_message = f'no source directory [{src_dir}] found'
             self.Logger.error(error_message)
             exit()
 
@@ -65,9 +67,9 @@ class BaseCsvToTableImporter(ABC):
                     for file in files:
                         if file.endswith('.csv'):
                             csv_filepath = os.path.join(root, file)
-                            diagnosis_df = self._get_dataframe(csv_filepath)
+                            diagnosis_df = self._get_dtfrme(csv_filepath)
                             self._validate(diagnosis_df)
-                            self._save(diagnosis_df)
+                            self._save(diagnosis_df, csv_filepath)
                             # self._rename_source_file(csv_filepath)
                             self._move_source_file(csv_filepath)
         finally:
@@ -75,14 +77,17 @@ class BaseCsvToTableImporter(ABC):
                 self.conn.close()
 
     @staticmethod
-    def _get_dataframe(csv_filepath: str) -> pd.DataFrame:
+    def _get_dtfrme(csv_filepath: str) -> pd.DataFrame:
         diagnosis_df = pd.read_csv(csv_filepath)
         diagnosis_df = diagnosis_df.fillna('M')
 
         return diagnosis_df
 
-    def _save(self, diagnosis_df: pd.DataFrame):
-        diagnosis_df.to_sql(self.target_table, self.conn, index=False, if_exists='append')
+    def _save(self, diagnosis_df: pd.DataFrame, csv_filepath):
+        try:
+            diagnosis_df.to_sql(self.target_table, self.conn, index=False, if_exists='append')
+        except sqlite3.IntegrityError as error:
+            self.Logger.error(csv_filepath + ' ' + str(error))
 
     def _rename_source_file(self, csv_filepath):
         new_filename = csv_filepath.replace('.csv', '.imported')
@@ -95,7 +100,7 @@ class BaseCsvToTableImporter(ABC):
 
     def _move_source_file(self, csv_filepath: str):
         try:
-            dst = csv_filepath.replace('src', 'res')
+            dst = csv_filepath.replace('src', 'src')
             os.renames(csv_filepath, dst)
         except FileExistsError:
             error_message = f'File {dst} already exists'
@@ -103,9 +108,8 @@ class BaseCsvToTableImporter(ABC):
         except OSError as e:
             self.Logger.error(e)
 
-    @staticmethod
     @abstractmethod
-    def _validate(diagnosis_df):
+    def _validate(self, diagnosis_df):
         pass
 
 
@@ -115,12 +119,21 @@ class CsvToDiagnosisImporter(BaseCsvToTableImporter):
         target_table = 'Diagnosis_diagnosis'
         super().__init__(src_dir, db_path, target_table)
 
-    @staticmethod
-    def _validate(diagnosis_df):
-        pass
+    def _validate(self, diagnosis_df):
+        schema = Schema([
+            Column('visit_dt', [MatchesPatternValidation(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:00$')]),
+            Column('sex', [InListValidation(['M', 'K'])]),
+            Column('icd10', [MatchesPatternValidation(r'^[CDIJKMNRZ]{1}\d{1,2}.?\d{0,2}$')])
+        ])
+
+        errors = schema.validate(diagnosis_df)
+
+        for error in errors:
+            self.Logger.error(error)
+
+        if len(errors) > 0:
+            exit()
 
 
 diagnosis_importer = CsvToDiagnosisImporter(src_dir='src', db_path='..\..\db.sqlite3')
 diagnosis_importer.do_import()
-
-# gdzie zaczynamy kodowanie z pandas schema?
